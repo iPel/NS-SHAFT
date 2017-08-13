@@ -90,7 +90,7 @@
 	var HERO_WIDTH = 26;
 	var ARROW_HEIGHT = 15, ARROW_WIDTH = 5; // 钉子尺寸
 
-	var FLOOR_VELOCITY = -0.10; // 地板上升速度
+	var FLOOR_VELOCITY_BASE = -0.10; // 地板上升速度
 	var GRAVITY_ACC = 0.0015; // 重力加速度
 	var SPRINGING_VELOCITY = -0.5; // 离开弹簧时的初速度
 	var SPRING_TIME = 100; // 弹簧压缩时间
@@ -106,9 +106,11 @@
 	var $wrap, $canvas, $ctx, $res;
 	var lastTime;
 	var drawCountStartTime = 0, drawCount = 0, lastInterval = 0, lastDrawCount = 0;
+	var floorVelocity;
 	var score = 0;
 	var isRunning = false;
 	var leftPressed = NaN, rightPressed = NaN, spacePressed = NaN;
+	var topBarChange = false;
 	// var timeCoefficient = 1, timeModifier = 0;
 
 	var FloorSeq = function() {
@@ -154,7 +156,7 @@
 			return FLOOR_HEIGHT;
 		},
 		landing : function(hero, time) {
-			hero.vy = FLOOR_VELOCITY;
+			hero.vy = floorVelocity;
 			hero.regain();
 			updateScore(this.seq);
 		},
@@ -200,7 +202,7 @@
 		landing : function(hero, time) {
 			this.touchTime = time;
 			this.spring = SPRING_HEIGHT;
-			hero.vy = FLOOR_VELOCITY;
+			hero.vy = floorVelocity;
 			hero.regain();
 			updateScore(this.seq);
 		},
@@ -274,7 +276,7 @@
 			context.restore();
 		},
 		landing : function(hero, time) {
-			hero.vy = FLOOR_VELOCITY;
+			hero.vy = floorVelocity;
 			hero.vx = ROLLING_VELOCITY;
 			hero.regain();
 			updateScore(this.seq);
@@ -319,7 +321,7 @@
 			context.restore();
 		},
 		landing : function(hero, time) {
-			hero.vy = FLOOR_VELOCITY;
+			hero.vy = floorVelocity;
 			hero.vx = -ROLLING_VELOCITY;
 			hero.regain();
 			updateScore(this.seq);
@@ -353,7 +355,7 @@
 			context.restore();
 		},
 		landing : function(hero, time) {
-			hero.vy = FLOOR_VELOCITY;
+			hero.vy = floorVelocity;
 			hero.hurt(4, time);
 			updateScore(this.seq);
 		}
@@ -389,7 +391,7 @@
 		},
 		landing : function(hero, time) {
 			this.touchTime = time;
-			hero.vy = FLOOR_VELOCITY;
+			hero.vy = floorVelocity;
 			hero.regain();
 			updateScore(this.seq);
 		},
@@ -502,11 +504,13 @@
 		regain : function() {
 			if (this.life < 10) {
 				++this.life;
+				topBarChange = true;
 			}
 		},
 		hurt : function(num, time) {
 			this.hurtTime = time;
-			this.life -= num;
+			this.life = Math.max(0, this.life - num);
+			topBarChange = true;
 		}
 	});
 
@@ -576,7 +580,7 @@
 	}
 
 	function updateAllVerticalPosition(step, time) {
-		var floorDistance = step * FLOOR_VELOCITY;
+		var floorDistance = step * floorVelocity;
 		for (var i = 0, len = floorArray.length; i < len; ++i) {
 			floorArray[i].y += floorDistance;
 		}
@@ -676,12 +680,18 @@
 
 		context.restore();
 		
-		context.save();
-		context.clearRect(0, 0, STAGE_WIDTH, MARGIN_TOP);
-		context.fillStyle = '#000';
-		context.font = '12pt monospace';
-		context.fillText('life: [' + 'oooooooooo----------'.substr(10 - Math.max(0, hero.life), 10) + ']  score: ' + score, 10, 24);
+		if (topBarChange) {
+			topBarChange = false;
+			context.save();
+			context.clearRect(0, 0, STAGE_WIDTH, MARGIN_TOP);
+			context.fillStyle = '#000';
+			context.font = '12pt monospace';
+			context.fillText('life: [' + 'oooooooooo----------'.substr(10 - hero.life, 10) + ']  score: ' + score, 10, 24);
+			context.restore();
+		}
+
 		if (window.DEBUG) {
+			context.save();
 			context.font = '12pt monospace';
 			context.fillText(((drawCount + lastDrawCount) * 1000 / (lastInterval + time - drawCountStartTime)).toFixed(2) + ' fps', 10, MARGIN_TOP + 30);
 			if (++drawCount > 20) {
@@ -690,12 +700,21 @@
 				drawCount -= 20;
 				drawCountStartTime = time;
 			}
+			context.restore();
 		}
-		context.restore();
 	}
 
-	function updateScore(newScore) {
-		score = newScore;
+	function updateScore(floorSeq) {
+		var newScore = Math.floor(floorSeq * 0.2);
+		if (newScore != score) {
+			topBarChange = true;
+			var level = Math.floor(newScore * 0.1);
+			if (level > Math.floor(score * 0.1)) {
+				console.info('level up', level);
+				floorVelocity = (1 + 0.1 * level) * FLOOR_VELOCITY_BASE;
+			}
+			score = newScore;
+		}
 	}
 
 	function loop(step, time) {
@@ -888,7 +907,9 @@
 			FloorSeq.reset();
 			floorArray = [];
 			hero = new Hero((STAGE_WIDTH - HERO_WIDTH) * 0.5, STAGE_HEIGHT - FLOOR_DISTANCE);
+			floorVelocity = FLOOR_VELOCITY_BASE;
 			score = 0;
+			topBarChange = true;
 		}
 		isRunning = true;
 		lastTime = 0;

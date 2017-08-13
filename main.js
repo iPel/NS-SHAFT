@@ -108,7 +108,7 @@
 	var drawCountStartTime = 0, drawCount = 0, lastInterval = 0, lastDrawCount = 0;
 	var score = 0;
 	var isRunning = false;
-	var leftPressed = false, rightPressed = false, spacePressed = false;
+	var leftPressed = NaN, rightPressed = NaN, spacePressed = NaN;
 	// var timeCoefficient = 1, timeModifier = 0;
 
 	var FloorSeq = function() {
@@ -656,7 +656,7 @@
 		if (!isRunning) {
 			context.save();
 			context.translate(STAGE_WIDTH * 0.5, STAGE_HEIGHT * 0.5);
-			if (!spacePressed) {
+			if (!isFinite(spacePressed)) {
 				context.beginPath();
 				roundRect(context, -109.5, -29.5, 219, 59, 10);
 				context.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -776,40 +776,40 @@
 
 		//regist control
 		window.addEventListener('keydown', function(e) {
-			if (e.keyCode == 37) {
-				leftPressed = true;
+			if (e.keyCode == 37) { // left
+				leftPressed = 0;
 				hero.turnLeft();
 				e.preventDefault();
 				e.stopPropagation();
-			} else if (e.keyCode == 39) {
-				rightPressed = true;
+			} else if (e.keyCode == 39) { // right
+				rightPressed = 0;
 				hero.turnRight();
 				e.preventDefault();
 				e.stopPropagation();
-			} else if (e.keyCode == 32) {
+			} else if (e.keyCode == 32 || e.keyCode == 13) { // space or enter
 				if (!isRunning) {
-					spacePressed = true;
+					spacePressed = 0;
 					drawAll($ctx, lastTime);
 				}
 			}
 		}, false);
 		window.addEventListener('keyup', function(e) {
 			if (e.keyCode == 37) {
-				leftPressed = false;
-				if (rightPressed) {
+				leftPressed = NaN;
+				if (isFinite(rightPressed)) {
 					hero.turnRight();
 				} else {
 					hero.stay();
 				}
 			} else if (e.keyCode == 39) {
-				rightPressed = false;
-				if (leftPressed) {
+				rightPressed = NaN;
+				if (isFinite(leftPressed)) {
 					hero.turnLeft();
 				} else {
 					hero.stay();
 				}
-			} else if (e.keyCode == 32 && spacePressed) {
-				spacePressed = false;
+			} else if (isFinite(spacePressed) && (e.keyCode == 32 || e.keyCode == 13)) {
+				spacePressed = NaN;
 				start();
 			}
 		}, false);
@@ -817,15 +817,15 @@
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (!isRunning) {
-					spacePressed = true;
+					spacePressed = touch.identifier;
 					drawAll($ctx, lastTime);
 				} else if (touch.clientX < document.documentElement.clientWidth * 0.5) {
-					leftPressed = true;
+					leftPressed = touch.identifier;
 					hero.turnLeft();
 					e.preventDefault();
 					e.stopPropagation();
 				} else {
-					rightPressed = true;
+					rightPressed = touch.identifier;
 					hero.turnRight();
 					e.preventDefault();
 					e.stopPropagation();
@@ -835,19 +835,19 @@
 		window.addEventListener('touchend', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
-				if (!isRunning && spacePressed) {
-					spacePressed = false;
+				if (touch.identifier == spacePressed) {
+					spacePressed = NaN;
 					start();
-				} else if (touch.clientX < document.documentElement.clientWidth * 0.5) {
-					leftPressed = false;
-					if (rightPressed) {
+				} else if (touch.identifier == leftPressed) {
+					leftPressed = NaN;
+					if (isFinite(rightPressed)) {
 						hero.turnRight();
 					} else {
 						hero.stay();
 					}
-				} else {
-					rightPressed = false;
-					if (leftPressed) {
+				} else if (touch.identifier == rightPressed) {
+					rightPressed = NaN;
+					if (isFinite(leftPressed)) {
 						hero.turnLeft();
 					} else {
 						hero.stay();
@@ -858,16 +858,16 @@
 		window.addEventListener('touchcancel', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
-				if (touch.clientX < document.documentElement.clientWidth * 0.5) {
-					leftPressed = false;
-					if (rightPressed) {
+				if (touch.identifier == leftPressed) {
+					leftPressed = NaN;
+					if (isFinite(rightPressed)) {
 						hero.turnRight();
 					} else {
 						hero.stay();
 					}
-				} else {
-					rightPressed = false;
-					if (leftPressed) {
+				} else if (touch.identifier == rightPressed) {
+					rightPressed = NaN;
+					if (isFinite(leftPressed)) {
 						hero.turnLeft();
 					} else {
 						hero.stay();

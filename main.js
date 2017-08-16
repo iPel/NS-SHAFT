@@ -1,8 +1,11 @@
 /**
  * author: pel
  */
-;~function(){
+;~function(global) {
 	'use strict';
+	var Game = {};
+	global['Game'] = Game;
+
 	/*==================
 	 * util functions
 	 *==================*/
@@ -80,6 +83,12 @@
 		context.closePath();
 	}
 
+	function clearNode($node) {
+		while ($node.hasChildNodes()) {
+			$node.removeChild($node.lastChild);
+		}
+	}
+
 	/**
 	 * constant
 	 */
@@ -107,8 +116,8 @@
 	var lastTime;
 	var drawCountStartTime = 0, drawCount = 0, lastInterval = 0, lastDrawCount = 0;
 	var floorVelocity;
-	var score = 0;
-	var isRunning = false;
+	var score = 0, bestScore = 0;
+	var isRunning = false, isCooldownTime = false;
 	var leftPressed = NaN, rightPressed = NaN, spacePressed = NaN;
 	var topBarChange = false;
 	// var timeCoefficient = 1, timeModifier = 0;
@@ -660,21 +669,31 @@
 		if (!isRunning) {
 			context.save();
 			context.translate(STAGE_WIDTH * 0.5, STAGE_HEIGHT * 0.5);
-			if (!isFinite(spacePressed)) {
+			if (isCooldownTime) {
+				context.textAlign = 'center';
+				context.font = 'bold 32pt monospace';
+				context.strokeStyle = '#fff';
+				context.lineWidth = 6;
+				context.strokeText('Game Over', 0, 10);
+				context.fillStyle = '#000';
+				context.fillText('Game Over', 0, 10);
+			} else {
+				if (!isFinite(spacePressed)) {
+					context.beginPath();
+					roundRect(context, -109.5, -29.5, 219, 59, 10);
+					context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+					context.fill();
+					context.translate(-5, -5);
+				}
 				context.beginPath();
 				roundRect(context, -109.5, -29.5, 219, 59, 10);
-				context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+				context.fillStyle = '#fff';
 				context.fill();
-				context.translate(-5, -5);
+				context.fillStyle = '#000';
+				context.font = 'bold 24pt monospace';
+				context.textAlign = 'center';
+				context.fillText(judge() ? 'play again' : 'continue', 0, 10);
 			}
-			context.beginPath();
-			roundRect(context, -109.5, -29.5, 219, 59, 10);
-			context.fillStyle = '#fff';
-			context.fill();
-			context.fillStyle = '#000';
-			context.font = 'bold 24pt monospace';
-			context.textAlign = 'center';
-			context.fillText(judge() ? 'play again' : 'continue', 0, 10);
 			context.restore();
 		}
 
@@ -686,7 +705,7 @@
 			context.clearRect(0, 0, STAGE_WIDTH, MARGIN_TOP);
 			context.fillStyle = '#000';
 			context.font = '12pt monospace';
-			context.fillText('life: [' + 'oooooooooo----------'.substr(10 - hero.life, 10) + ']  score: ' + score, 10, 24);
+			context.fillText('life: ' + 'oooooooooo----------'.substr(10 - hero.life, 10) + '  score: ' + score, 10, 24);
 			context.restore();
 		}
 
@@ -753,6 +772,15 @@
 				ended = loop(duration, time);
 			}
 			if (ended) {
+				isCooldownTime = true;
+				setTimeout(function() {
+					isCooldownTime = false;
+					drawAll($ctx, time);
+				}, 1000);
+				bestScore = Math.max(score, bestScore);
+				if (Game.onOver) {
+					Game.onOver(score, bestScore);
+				}
 				isRunning = false;
 			}
 		}
@@ -784,7 +812,7 @@
 		$canvas.style.display = 'block';
 		$canvas.style.margin = '0 auto';
 		resizeCanvas($wrap, $canvas);
-		$wrap.innerHTML = '';
+		clearNode($wrap);
 		$wrap.appendChild($canvas);
 		$canvas.scrollIntoView();
 		$ctx = $canvas.getContext('2d');
@@ -806,7 +834,7 @@
 				e.preventDefault();
 				e.stopPropagation();
 			} else if (e.keyCode == 32 || e.keyCode == 13) { // space or enter
-				if (!isRunning) {
+				if (!isRunning && !isCooldownTime) {
 					spacePressed = 0;
 					drawAll($ctx, lastTime);
 				}
@@ -832,12 +860,14 @@
 				start();
 			}
 		}, false);
-		window.addEventListener('touchstart', function(e) {
+		$wrap.addEventListener('touchstart', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (!isRunning) {
-					spacePressed = touch.identifier;
-					drawAll($ctx, lastTime);
+					if (!isCooldownTime) {
+						spacePressed = touch.identifier;
+						drawAll($ctx, lastTime);
+					}
 				} else if (touch.clientX < document.documentElement.clientWidth * 0.5) {
 					leftPressed = touch.identifier;
 					hero.turnLeft();
@@ -851,7 +881,7 @@
 				}
 			}
 		}, false);
-		window.addEventListener('touchend', function(e) {
+		$wrap.addEventListener('touchend', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (touch.identifier == spacePressed) {
@@ -874,7 +904,7 @@
 				}
 			}
 		}, false);
-		window.addEventListener('touchcancel', function(e) {
+		$wrap.addEventListener('touchcancel', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (touch.identifier == leftPressed) {
@@ -916,16 +946,12 @@
 		requestAnimationFrame(frame);
 	}
 
-	function main() {
-		$wrap = document.getElementById('content');
-		$wrap.style.textAlign = 'center';
-		$wrap.innerHTML = 'Loading...';
+	Game.launch = function($wrapNode) {
+		$wrap = $wrapNode;
 		loadImage({
 			bg : 'bg.png',
 			hero : 'led.png'
 		}, init);
 	}
 
-	main();
-
-}();
+}(window);

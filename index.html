@@ -1,17 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>IMITATION NS-SHAFT</title>
+<title>NS-SHAFT</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="white">
-<link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-title" content="NS-SHAFT">
-<style>body{margin: 0;}</style>
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+	body{margin: 0;}
+	#content{text-align: center;}
+</style>
 </head>
 <body>
-	<div id="content"></div>
+	<div id="content">Loading...</div>
+	<script>
+	window.onerror = function (msg, url, lineNo, columnNo, error) {
+		var node = document.body;
+		var string = msg.toLowerCase();
+		var substring = "script error";
+		if (string.indexOf(substring) > -1){
+			node.appendChild(document.createTextNode('Script Error: See Console for Detail'));
+		} else {
+			var message = [
+				'Message: ' + msg,
+				'URL: ' + url,
+				'Line: ' + lineNo,
+				'Column: ' + columnNo,
+				'Error object: ' + JSON.stringify(error)
+			].join(' - ');
+			node.appendChild(document.createTextNode(message));
+		}
+		return false;
+	};
+	</script>
 	<script src="main.js"></script>
+	<script>
+	~function(){
+		var Game = window.Game;
+		Game && Game.launch(document.getElementById('content'));
+		if (/zh\-cn/i.test(navigator.language)) {
+			document.title = '是男人就下100层';
+		} else if (/zh\-/i.test(navigator.language)) {
+			document.title = '小朋友下樓梯';
+		}
+		if (/MicroMessenger/i.test(navigator.userAgent)) {
+			var script = document.createElement('script');
+			script.src = 'sns.js';
+			document.body.appendChild(script);
+		}
+	}();
+	</script>
 </body>
 </html>

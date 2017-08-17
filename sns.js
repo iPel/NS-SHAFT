@@ -17,5 +17,8 @@
 				document.title = str[2];
 			}
 		}
+		Game.onStart = function() {
+			document.title = str[2];
+		}
 	}
 }(window);

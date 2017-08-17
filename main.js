@@ -933,6 +933,9 @@
 			return;
 		}
 		if (judge()) {
+			if (Game.onStart) {
+				Game.onStart();
+			}
 			//create world
 			FloorSeq.reset();
 			floorArray = [];

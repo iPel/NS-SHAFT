@@ -72,8 +72,8 @@
 	}
 
 	function roundRect(context, x, y, w, h, r) {
-		if (w < 2 * r) r = w / 2;
-		if (h < 2 * r) r = h / 2;
+		if (w < 2 * r) r = w * 0.5;
+		if (h < 2 * r) r = h * 0.5;
 		context.beginPath();
 		context.moveTo(x+r, y);
 		context.arcTo(x+w, y,   x+w, y+h, r);
@@ -116,7 +116,7 @@
 	var lastTime;
 	var drawCountStartTime = 0, drawCount = 0, lastInterval = 0, lastDrawCount = 0;
 	var floorVelocity;
-	var score = 0, bestScore = 0;
+	var score, bestScore = 0, level;
 	var isRunning = false, isCooldownTime = false;
 	var leftPressed = NaN, rightPressed = NaN, spacePressed = NaN;
 	var topBarChange = false;
@@ -530,7 +530,8 @@
 		var firstInit = floorArray.length == 0;
 		var floor = floorArray[floorArray.length - 1];
 		var postion = floor && floor.y || 0;
-		for (postion += FLOOR_DISTANCE; postion < STAGE_HEIGHT; postion += FLOOR_DISTANCE) {
+		while (postion < STAGE_HEIGHT) {
+			postion += FLOOR_DISTANCE;
 			var floorY = postion;
 			var floorX = Math.round(Math.random() * STAGE_WIDTH - FLOOR_WIDTH * 0.5);
 			if (firstInit) { // make sure can land on a floor at the beginning
@@ -727,9 +728,10 @@
 		var newScore = Math.floor(floorSeq * 0.2);
 		if (newScore != score) {
 			topBarChange = true;
-			var level = Math.floor(newScore * 0.1);
-			if (level > Math.floor(score * 0.1)) {
-				console.info('level up', level);
+			var newLevel = Math.floor(newScore * 0.1);
+			if (newLevel > level) {
+				console.info('level up', newLevel);
+				level = newLevel;
 				floorVelocity = (1 + 0.1 * level) * FLOOR_VELOCITY_BASE;
 			}
 			score = newScore;
@@ -942,6 +944,7 @@
 			hero = new Hero((STAGE_WIDTH - HERO_WIDTH) * 0.5, STAGE_HEIGHT - FLOOR_DISTANCE);
 			floorVelocity = FLOOR_VELOCITY_BASE;
 			score = 0;
+			level = 0;
 			topBarChange = true;
 		}
 		isRunning = true;

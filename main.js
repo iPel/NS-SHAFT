@@ -762,6 +762,7 @@
 		if (duration > 2000) {
 			console.info('Pause, duration: ' + duration);
 			isRunning = false;
+			window.addEventListener('touchmove', onMove, false);
 		} else {
 			var ended = false;
 			for (; duration > MAX_ACTION_INTERVAL; duration -= MAX_ACTION_INTERVAL) {
@@ -784,6 +785,7 @@
 					Game.onOver(score, bestScore);
 				}
 				isRunning = false;
+				window.addEventListener('touchmove', onMove, false);
 			}
 		}
 		drawAll($ctx, time);
@@ -794,9 +796,9 @@
 	}
 
 	function resizeCanvas($wrap, $canvas) {
-		$wrap.style.width = document.documentElement.clientWidth + 'px';
-		$wrap.style.height = document.documentElement.clientHeight + 'px';
-		var zoomRate = Math.min($wrap.offsetWidth / STAGE_WIDTH, $wrap.offsetHeight / STAGE_HEIGHT);
+		var screenWidth = document.documentElement.clientWidth;
+		var screenHeight = document.documentElement.clientHeight;
+		var zoomRate = Math.min(screenWidth / STAGE_WIDTH, screenHeight / STAGE_HEIGHT);
 		if (zoomRate > 1) {
 			var ratio = window.devicePixelRatio || 1;
 			zoomRate = Math.floor(zoomRate * ratio) / ratio;
@@ -806,21 +808,35 @@
 		console.info('resize rate=' + zoomRate);
 	}
 
+	function onMove(e) {
+		if (isFinite(spacePressed)) {
+			spacePressed = NaN;
+			drawAll($ctx, lastTime);
+		}
+	}
+
 	function init(res) {
 		$res = res;
 		$canvas = document.createElement('canvas');
 		$canvas.width = STAGE_WIDTH;
 		$canvas.height = STAGE_HEIGHT;
+		$canvas.style.width = '0px';
+		$canvas.style.height = '0px';
+		$canvas.style.transition = 'width 0.5s, height 0.5s';
 		$canvas.style.display = 'block';
 		$canvas.style.margin = '0 auto';
-		resizeCanvas($wrap, $canvas);
 		clearNode($wrap);
 		$wrap.appendChild($canvas);
-		$canvas.scrollIntoView();
+		setTimeout(function() {
+			resizeCanvas($wrap, $canvas);
+		}, 50);
+		// $canvas.scrollIntoView();
 		$ctx = $canvas.getContext('2d');
 		window.addEventListener('resize', function() {
 			resizeCanvas($wrap, $canvas);
-			$canvas.scrollIntoView();
+			if (isRunning) {
+				$canvas.scrollIntoView();
+			}
 		}, false);
 
 		//regist control
@@ -840,6 +856,8 @@
 					spacePressed = 0;
 					drawAll($ctx, lastTime);
 				}
+				e.preventDefault();
+				e.stopPropagation();
 			}
 		}, false);
 		window.addEventListener('keyup', function(e) {
@@ -862,11 +880,11 @@
 				start();
 			}
 		}, false);
-		$wrap.addEventListener('touchstart', function(e) {
+		window.addEventListener('touchstart', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (!isRunning) {
-					if (!isCooldownTime) {
+					if (!isCooldownTime && e.target == $canvas) {
 						spacePressed = touch.identifier;
 						drawAll($ctx, lastTime);
 					}
@@ -883,7 +901,7 @@
 				}
 			}
 		}, false);
-		$wrap.addEventListener('touchend', function(e) {
+		window.addEventListener('touchend', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (touch.identifier == spacePressed) {
@@ -906,7 +924,7 @@
 				}
 			}
 		}, false);
-		$wrap.addEventListener('touchcancel', function(e) {
+		window.addEventListener('touchcancel', function(e) {
 			var touch = e.changedTouches[0];
 			if (touch) {
 				if (touch.identifier == leftPressed) {
@@ -947,8 +965,10 @@
 			level = 0;
 			topBarChange = true;
 		}
+		window.removeEventListener('touchmove', onMove, false);
 		isRunning = true;
 		lastTime = 0;
+		$canvas.scrollIntoView();
 		requestAnimationFrame(frame);
 	}
 

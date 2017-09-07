@@ -15,4 +15,4 @@ This is an imitation of the [NS-SHAFT](https://en.wikipedia.org/wiki/NS-Shaft) g
 
 * **life**: hitting spikes on the top or on a floor reduces the player's life, landing on a floor (without spikes) increases the player's life
 
-* **game over**: falling off the bottom or running out of life ![smile](https://static.fouryes.com/smile.gif)
+* **game over**: falling off the bottom or running out of life

@@ -795,17 +795,22 @@
 		}
 	}
 
-	function resizeCanvas($wrap, $canvas) {
+	function resizeCanvas($wrap, $canvas, $ctx) {
 		var screenWidth = document.documentElement.clientWidth;
 		var screenHeight = document.documentElement.clientHeight;
 		var zoomRate = Math.min(screenWidth / STAGE_WIDTH, screenHeight / STAGE_HEIGHT);
-		if (zoomRate > 1) {
-			var ratio = window.devicePixelRatio || 1;
-			zoomRate = Math.floor(zoomRate * ratio) / ratio;
-		}
+		var ratio = window.devicePixelRatio || 1;
 		$canvas.style.width = (STAGE_WIDTH * zoomRate) + 'px';
 		$canvas.style.height = (STAGE_HEIGHT * zoomRate) + 'px';
-		console.info('resize rate=' + zoomRate);
+		$canvas.width = STAGE_WIDTH * zoomRate * ratio;
+		$canvas.height = STAGE_HEIGHT * zoomRate * ratio;
+		
+		$ctx.setTransform(zoomRate * ratio, 0, 0, zoomRate * ratio, 0, 0);
+		topBarChange = true;
+		if (lastTime) {
+			drawAll($ctx, lastTime);
+		}
+		console.info('resize rate=' + zoomRate + ", ratio=" + ratio + ", width=" + $canvas.width + ", height=" + $canvas.height);
 	}
 
 	function onMove(e) {
@@ -818,22 +823,23 @@
 	function init(res) {
 		$res = res;
 		$canvas = document.createElement('canvas');
-		$canvas.width = STAGE_WIDTH;
-		$canvas.height = STAGE_HEIGHT;
-		$canvas.style.width = '0px';
-		$canvas.style.height = '0px';
-		$canvas.style.transition = 'width 0.5s, height 0.5s';
+		// $canvas.width = STAGE_WIDTH;
+		// $canvas.height = STAGE_HEIGHT;
+		// $canvas.style.width = '0px';
+		// $canvas.style.height = '0px';
+		// $canvas.style.transition = 'width 0.5s, height 0.5s';
 		$canvas.style.display = 'block';
 		$canvas.style.margin = '0 auto';
 		clearNode($wrap);
 		$wrap.appendChild($canvas);
-		setTimeout(function() {
-			resizeCanvas($wrap, $canvas);
-		}, 50);
-		// $canvas.scrollIntoView();
+
 		$ctx = $canvas.getContext('2d');
+		
+		setTimeout(function() {
+			resizeCanvas($wrap, $canvas, $ctx);
+		}, 50);
 		window.addEventListener('resize', function() {
-			resizeCanvas($wrap, $canvas);
+			resizeCanvas($wrap, $canvas, $ctx);
 			if (isRunning) {
 				$canvas.scrollIntoView();
 			}

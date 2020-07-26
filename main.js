@@ -89,6 +89,30 @@
 		}
 	}
 
+	var customEvents = {};
+	function onEvent(e, fn) {
+		var fns = customEvents[e] || (customEvents[e] = []);
+		if (fns.indexOf(fn) == -1) {
+			fns.push(fn);
+		}
+	}
+	function offEvent(e, fn) {
+		var fns = customEvents[e];
+		var index;
+		if (fns && (index = fns.indexOf(fn)) != -1) {
+			fns.splice(index, 1);
+		}
+	}
+	function fireEvent(e) {
+		var fns = customEvents[e];
+		if (fns) {
+			var args = [].slice.call(arguments, 1);
+			for (var i = 0, len = fns.length; i < len; ++i) {
+				fns[i].apply(Game, args);
+			}
+		}
+	}
+
 	/**
 	 * constant
 	 */
@@ -781,9 +805,7 @@
 					drawAll($ctx, time);
 				}, 1000);
 				bestScore = Math.max(score, bestScore);
-				if (Game.onOver) {
-					Game.onOver(score, bestScore);
-				}
+				fireEvent('gameOver', score, bestScore);
 				isRunning = false;
 				window.addEventListener('touchmove', onMove, false);
 			}
@@ -959,9 +981,7 @@
 			return;
 		}
 		if (judge()) {
-			if (Game.onStart) {
-				Game.onStart();
-			}
+			fireEvent('gameStart');
 			//create world
 			FloorSeq.reset();
 			floorArray = [];
@@ -985,5 +1005,8 @@
 			hero : 'led.png'
 		}, init);
 	}
+
+	Game.on = onEvent;
+	Game.off = offEvent;
 
 }(window);

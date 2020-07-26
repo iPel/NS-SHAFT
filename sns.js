@@ -10,15 +10,15 @@
 		} else {
 			str = ['I finished ', ' floors, challenge me | ', 'NS-SHAFT'];
 		}
-		Game.onOver = function(score, bestScore) {
+		Game.on('gameOver', function(score, bestScore) {
 			if (bestScore >= 10) {
 				document.title = str[0] + bestScore + str[1] + str[2];
 			} else {
 				document.title = str[2];
 			}
-		}
-		Game.onStart = function() {
+		});
+		Game.on('gameStart', function() {
 			document.title = str[2];
-		}
+		});
 	}
 }(window);

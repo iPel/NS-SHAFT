@@ -68,14 +68,14 @@
 	~function(){
 		var trackEvent;
 		if (new Date().getTimezoneOffset() == -480) {
-			window._hmt = [];
+			window._hmt = window._hmt || [];
 			var script = document.createElement('script');
 			script.async = 'async';
 			script.src = 'https://hm.baidu.com/hm.js?6998d97ddc26a42b1795408af4d9d9cc';
-			document.body.appendChild(script);
+			document.head.appendChild(script);
 
 			trackEvent = function(event, value) {
-				_hmt.push(['_trackEvent', 'main', event, '', value]);
+				_hmt.push(['_trackEvent', 'main', event, 'all', value]);
 			};
 		} else {
 			var script = document.createElement('script');
